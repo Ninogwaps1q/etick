@@ -34,20 +34,33 @@
                         <div class="check-item <?php echo $phpOk ? 'check-pass' : 'check-fail'; ?>">
                             <strong>PHP Version:</strong> <?php echo $phpVersion; ?>
                             <?php if ($phpOk): ?>
-                                ✓ (Required: <?php echo $requiredVersion; ?>+)
+                                &#10003; (Required: <?php echo $requiredVersion; ?>+)
                             <?php else: ?>
-                                ✗ (Required: <?php echo $requiredVersion; ?>+)
+                                &#10007; (Required: <?php echo $requiredVersion; ?>+)
                             <?php endif; ?>
                         </div>
 
                         <?php
-                        $extensions = ['pdo', 'pdo_mysql', 'mysqli', 'mbstring', 'gd'];
-                        foreach ($extensions as $ext):
+                        $requiredExtensions = ['pdo', 'pdo_mysql', 'mysqli', 'mbstring'];
+                        $optionalExtensions = ['gd'];
+                        $allRequiredExtensionsLoaded = true;
+
+                        foreach ($requiredExtensions as $ext):
                             $loaded = extension_loaded($ext);
+                            $allRequiredExtensionsLoaded = $allRequiredExtensionsLoaded && $loaded;
                         ?>
                         <div class="check-item <?php echo $loaded ? 'check-pass' : 'check-fail'; ?>">
                             <strong>PHP Extension (<?php echo $ext; ?>):</strong>
-                            <?php echo $loaded ? '✓ Loaded' : '✗ Not Loaded'; ?>
+                            <?php echo $loaded ? '&#10003; Loaded' : '&#10007; Not Loaded'; ?>
+                        </div>
+                        <?php endforeach; ?>
+
+                        <?php foreach ($optionalExtensions as $ext):
+                            $loaded = extension_loaded($ext);
+                        ?>
+                        <div class="check-item <?php echo $loaded ? 'check-pass' : 'check-warning'; ?>">
+                            <strong>PHP Extension (<?php echo $ext; ?>):</strong>
+                            <?php echo $loaded ? '&#10003; Loaded' : 'Optional (recommended for image processing)'; ?>
                         </div>
                         <?php endforeach; ?>
 
@@ -59,7 +72,7 @@
                         ?>
                         <div class="check-item <?php echo $uploadWritable ? 'check-pass' : 'check-fail'; ?>">
                             <strong>Upload Directory (uploads/events/):</strong>
-                            <?php echo $uploadWritable ? '✓ Writable' : '✗ Not Writable'; ?>
+                            <?php echo $uploadWritable ? '&#10003; Writable' : '&#10007; Not Writable'; ?>
                             <?php if (!$uploadWritable): ?>
                                 <br><small>Run: chmod -R 755 uploads/</small>
                             <?php endif; ?>
@@ -68,32 +81,33 @@
                         <hr>
                         <h4>Database Connection</h4>
                         <?php
-                        require_once 'config/database.php';
+                        require_once __DIR__ . '/config/database.php';
                         $dbConnected = false;
                         $dbError = '';
-                        try {
-                            $db = new Database();
-                            $conn = $db->connect();
-                            if ($conn) {
-                                $dbConnected = true;
-                            }
-                        } catch (Exception $e) {
-                            $dbError = $e->getMessage();
+                        $allTablesExist = false;
+                        $conn = null;
+
+                        $db = new Database();
+                        $conn = $db->connect();
+                        if ($conn) {
+                            $dbConnected = true;
+                            $allTablesExist = true;
+                        } else {
+                            $dbError = $db->getLastError();
                         }
                         ?>
                         <div class="check-item <?php echo $dbConnected ? 'check-pass' : 'check-fail'; ?>">
                             <strong>Database Connection:</strong>
-                            <?php echo $dbConnected ? '✓ Connected' : '✗ Failed'; ?>
+                            <?php echo $dbConnected ? '&#10003; Connected' : '&#10007; Failed'; ?>
                             <?php if (!$dbConnected): ?>
-                                <br><small class="text-danger"><?php echo $dbError; ?></small>
-                                <br><small>Check your database credentials in config/database.php</small>
+                                <br><small class="text-danger"><?php echo htmlspecialchars($dbError); ?></small>
+                                <br><small>Check your database credentials in config/database.php and ensure MySQL is running.</small>
                             <?php endif; ?>
                         </div>
 
                         <?php if ($dbConnected): ?>
                             <?php
                             $tables = ['users', 'events', 'bookings'];
-                            $allTablesExist = true;
                             foreach ($tables as $table):
                                 $stmt = $conn->query("SHOW TABLES LIKE '$table'");
                                 $tableExists = $stmt->rowCount() > 0;
@@ -101,7 +115,7 @@
                             ?>
                             <div class="check-item <?php echo $tableExists ? 'check-pass' : 'check-fail'; ?>">
                                 <strong>Table (<?php echo $table; ?>):</strong>
-                                <?php echo $tableExists ? '✓ Exists' : '✗ Not Found'; ?>
+                                <?php echo $tableExists ? '&#10003; Exists' : '&#10007; Not Found'; ?>
                                 <?php if (!$tableExists): ?>
                                     <br><small>Import database/etick.sql in phpMyAdmin</small>
                                 <?php endif; ?>
@@ -132,8 +146,8 @@
                         <hr>
                         <div class="alert alert-info">
                             <strong>Next Steps:</strong>
-                            <?php if ($phpOk && $dbConnected && $allTablesExist && $uploadWritable): ?>
-                                <p class="mb-0">✓ All checks passed! Your system is ready.</p>
+                            <?php if ($phpOk && $allRequiredExtensionsLoaded && $dbConnected && $allTablesExist && $uploadWritable): ?>
+                                <p class="mb-0">&#10003; All checks passed! Your system is ready.</p>
                                 <p class="mt-2 mb-0">
                                     <a href="index.php" class="btn btn-primary">Go to Homepage</a>
                                     <a href="login.php" class="btn btn-success ms-2">Login</a>
@@ -155,3 +169,4 @@
     </div>
 </body>
 </html>
+

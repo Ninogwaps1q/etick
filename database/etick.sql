@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE NOT NULL,
-    profile_pic	varchar(255)
+    profile_pic VARCHAR(255),
     password VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     role ENUM('user', 'admin') DEFAULT 'user',
@@ -44,13 +44,14 @@ CREATE TABLE IF NOT EXISTS bookings (
     total_amount DECIMAL(10, 2) NOT NULL,
     booking_reference VARCHAR(20) UNIQUE NOT NULL,
     status ENUM('confirmed', 'cancelled', 'pending') DEFAULT 'confirmed',
+    payment_method VARCHAR(50) NOT NULL DEFAULT 'Unpaid',
     booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    payment_method	varchar(100) ALTER TABLE bookings ADD COLUMN payment_method VARCHAR(50) NOT NULL DEFAULT 'Unpaid';
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE
 );
 
 -- Insert default admin account
 -- Password: admin123 (hashed)
-INSERT INTO users (full_name, email, password, role) VALUES
-('Admin User', 'admin@etick.com', '$2y$10$8FXf/24vtBU.OHq06ymaFuyYxdEDeTBqFLOzIE7rdzjL2Q8mP.31.', 'admin');
+INSERT INTO users (full_name, email, password, role)
+VALUES ('Admin User', 'admin@etick.com', '$2y$10$8FXf/24vtBU.OHq06ymaFuyYxdEDeTBqFLOzIE7rdzjL2Q8mP.31.', 'admin')
+ON DUPLICATE KEY UPDATE full_name = VALUES(full_name);

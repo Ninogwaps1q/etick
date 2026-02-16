@@ -1,7 +1,7 @@
 <?php
-require_once '../config/database.php';
-require_once '../config/session.php';
-require_once '../includes/helpers.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/session.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 requireLogin();
 requireAdmin();
@@ -18,10 +18,10 @@ $stmt->execute([$eventId]);
 $event = $stmt->fetch();
 
 if (!$event) {
-    redirect('/admin/events.php');
+    redirect(app_url('admin/events.php'));
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $title = sanitize($_POST['title']);
     $description = sanitize($_POST['description']);
     $eventDate = $_POST['event_date'];
@@ -57,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Edit Event - eTick Admin';
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="container">
@@ -65,7 +65,7 @@ require_once '../includes/header.php';
         <div class="col">
             <div class="d-flex justify-content-between align-items-center">
                 <h2><i class="bi bi-pencil"></i> Edit Event</h2>
-                <a href="/admin/events.php" class="btn btn-secondary">
+                <a href="<?php echo app_url('admin/events.php'); ?>" class="btn btn-secondary">
                     <i class="bi bi-arrow-left"></i> Back to Events
                 </a>
             </div>
@@ -134,7 +134,7 @@ require_once '../includes/header.php';
                                 <label for="image" class="form-label">Event Image</label>
                                 <?php if ($event['image']): ?>
                                     <div class="mb-2">
-                                        <img src="/uploads/events/<?php echo $event['image']; ?>"
+                                        <img src="<?php echo app_url('uploads/events/' . $event['image']); ?>"
                                              alt="Current Image" class="img-thumbnail" style="max-height: 200px;">
                                     </div>
                                 <?php endif; ?>
@@ -177,4 +177,4 @@ require_once '../includes/header.php';
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

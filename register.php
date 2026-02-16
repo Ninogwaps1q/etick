@@ -1,16 +1,16 @@
 <?php
-require_once 'config/database.php';
-require_once 'config/session.php';
-require_once 'includes/helpers.php';
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/session.php';
+require_once __DIR__ . '/includes/helpers.php';
 
 if (isLoggedIn()) {
-    redirect('/index.php');
+    redirect(app_url('index.php'));
 }
 
 $error = '';
 $success = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $fullName = sanitize($_POST['full_name']);
     $email = sanitize($_POST['email']);
     $phone = sanitize($_POST['phone']);
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("INSERT INTO users (full_name, email, phone, password, role) VALUES (?, ?, ?, ?, 'user')");
 
             if ($stmt->execute([$fullName, $email, $phone, $hashedPassword])) {
-                redirect('/login.php?registered=1');
+                redirect(app_url('login.php?registered=1'));
             } else {
                 $error = 'Registration failed. Please try again.';
             }
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Register - eTick';
-require_once 'includes/header.php';
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container">
@@ -111,4 +111,4 @@ require_once 'includes/header.php';
     </div>
 </div>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

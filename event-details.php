@@ -1,7 +1,7 @@
 <?php
-require_once 'config/database.php';
-require_once 'config/session.php';
-require_once 'includes/helpers.php';
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/session.php';
+require_once __DIR__ . '/includes/helpers.php';
 
 $db = new Database();
 $conn = $db->connect();
@@ -18,7 +18,7 @@ if (!$event) {
     redirect('events.php'); // Redirect if event not found
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book'])) {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['book'])) {
     if (!isLoggedIn()) {
         redirect('login.php');
     }
@@ -63,7 +63,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['book'])) {
 }
 
 $pageTitle = $event['title'] . ' - eTick';
-require_once 'includes/header.php';
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container my-5">
@@ -197,4 +197,4 @@ require_once 'includes/header.php';
     </div>
 </div>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

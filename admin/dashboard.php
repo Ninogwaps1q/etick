@@ -1,7 +1,7 @@
 <?php
-require_once '../config/database.php';
-require_once '../config/session.php';
-require_once '../includes/helpers.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/session.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 requireLogin();
 requireAdmin();
@@ -29,7 +29,7 @@ $recentBookingsQuery = "
 $recentBookings = $conn->query($recentBookingsQuery)->fetchAll();
 
 $pageTitle = 'Admin Dashboard - eTick';
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="container">
@@ -110,17 +110,17 @@ require_once '../includes/header.php';
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <a href="/etick/admin/events.php" class="btn btn-outline-primary w-100">
+                            <a href="<?php echo app_url('admin/events.php'); ?>" class="btn btn-outline-primary w-100">
                                 <i class="bi bi-calendar-plus"></i> Manage Events
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="/etick/admin/bookings.php" class="btn btn-outline-success w-100">
+                            <a href="<?php echo app_url('admin/bookings.php'); ?>" class="btn btn-outline-success w-100">
                                 <i class="bi bi-ticket"></i> View Bookings
                             </a>
                         </div>
                         <div class="col-md-4">
-                            <a href="/etick/admin/users.php" class="btn btn-outline-info w-100">
+                            <a href="<?php echo app_url('admin/users.php'); ?>" class="btn btn-outline-info w-100">
                                 <i class="bi bi-people"></i> Manage Users
                             </a>
                         </div>
@@ -184,4 +184,5 @@ require_once '../includes/header.php';
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+

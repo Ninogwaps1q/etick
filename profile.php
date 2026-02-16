@@ -1,7 +1,7 @@
 <?php
-require_once 'config/session.php';
-require_once 'config/database.php';
-require_once 'includes/helpers.php';
+require_once __DIR__ . '/config/session.php';
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/includes/helpers.php';
 
 requireLogin(); // Make sure the user is logged in
 
@@ -19,11 +19,11 @@ $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // If user not found (shouldn't happen if logged in), redirect
 if (!$user) {
-    redirect('index.php');
+    redirect(app_url('index.php'));
 }
 
 // Handle profile update
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $name = sanitize($_POST['name'] ?? '');
     $email = sanitize($_POST['email'] ?? '');
     $password = $_POST['password'] ?? '';
@@ -43,6 +43,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    if (empty($name) || empty($email)) {
+        $error = 'Name and email are required.';
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = 'Please provide a valid email address.';
+    }
+
+    if (empty($error)) {
+        $stmt = $conn->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+        $stmt->execute([$email, $userId]);
+        if ($stmt->fetch()) {
+            $error = 'This email is already in use by another account.';
+        }
+    }
+
     if (empty($error)) {
         // If password provided, hash it
         if (!empty($password)) {
@@ -56,6 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($stmt->execute($params)) {
             $success = 'Profile updated successfully!';
+            $_SESSION['user_name'] = $name;
+            $_SESSION['email'] = $email;
             // Refresh user data
             $stmt = $conn->prepare("SELECT * FROM users WHERE id = ?");
             $stmt->execute([$userId]);
@@ -67,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'My Profile - eTick';
-require_once 'includes/header.php';
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container my-5">
@@ -83,10 +99,10 @@ require_once 'includes/header.php';
     <div class="row">
         <div class="col-md-4">
             <div class="card shadow-sm text-center p-3">
-                <img src="uploads/profiles/<?php echo $user['profile_pic'] ?? 'default.png'; ?>"
+                <img src="<?php echo !empty($user['profile_pic']) ? app_url('uploads/profiles/' . $user['profile_pic']) : app_url('assets/default-profile.svg'); ?>"
                      class="img-fluid rounded-circle mb-3" style="width:150px; height:150px; object-fit:cover;" alt="Profile Picture">
-                <h5><?php echo htmlspecialchars($user['u_name'] ?? ''); ?></h5>
-                <p class="text-muted"><?php echo htmlspecialchars($user['u_email'] ?? ''); ?></p>
+                <h5><?php echo htmlspecialchars($user['full_name'] ?? ''); ?></h5>
+                <p class="text-muted"><?php echo htmlspecialchars($user['email'] ?? ''); ?></p>
             </div>
         </div>
 
@@ -96,13 +112,13 @@ require_once 'includes/header.php';
                     <div class="mb-3">
                         <label for="name" class="form-label">Full Name *</label>
                         <input type="text" id="name" name="name" class="form-control"
-                               value="<?php echo htmlspecialchars($user['u_name'] ?? ''); ?>" required>
+                               value="<?php echo htmlspecialchars($user['full_name'] ?? ''); ?>" required>
                     </div>
 
                     <div class="mb-3">
                         <label for="email" class="form-label">Email *</label>
                         <input type="email" id="email" name="email" class="form-control"
-                               value="<?php echo htmlspecialchars($user['u_email'] ?? ''); ?>" required>
+                               value="<?php echo htmlspecialchars($user['email'] ?? ''); ?>" required>
                     </div>
 
                     <div class="mb-3">
@@ -123,4 +139,4 @@ require_once 'includes/header.php';
     </div>
 </div>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>

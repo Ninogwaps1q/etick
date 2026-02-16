@@ -1,12 +1,11 @@
 <?php
-require_once '../config/database.php';
-require_once '../config/session.php';
-require_once '../includes/helpers.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/session.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 requireLogin();
 
-// Base URL for all links
-$baseUrl = '/Etick/';
+$baseUrl = app_base_url();
 
 $bookingRef = isset($_GET['ref']) ? sanitize($_GET['ref']) : '';
 
@@ -32,7 +31,7 @@ if (!$booking) {
 }
 
 $pageTitle = 'Booking Confirmed - eTick';
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="container my-5">
@@ -107,4 +106,5 @@ require_once '../includes/header.php';
     </div>
 </div>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>
+

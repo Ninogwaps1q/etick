@@ -1,7 +1,7 @@
 <?php
-require_once '../config/database.php';
-require_once '../config/session.php';
-require_once '../includes/helpers.php';
+require_once __DIR__ . '/../config/database.php';
+require_once __DIR__ . '/../config/session.php';
+require_once __DIR__ . '/../includes/helpers.php';
 
 requireLogin();
 requireAdmin();
@@ -12,7 +12,7 @@ $conn = $db->connect();
 $success = '';
 $error = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     if ($_POST['action'] === 'add') {
         $title = sanitize($_POST['title']);
         $description = sanitize($_POST['description']);
@@ -63,7 +63,7 @@ $eventsQuery = "SELECT * FROM events ORDER BY created_at DESC";
 $events = $conn->query($eventsQuery)->fetchAll();
 
 $pageTitle = 'Manage Events - eTick Admin';
-require_once '../includes/header.php';
+require_once __DIR__ . '/../includes/header.php';
 ?>
 
 <div class="container">
@@ -114,11 +114,11 @@ require_once '../includes/header.php';
                                         <tr>
                                             <td>
                                                 <?php if ($event['image']): ?>
-                                                    <img src="/etick/uploads/events/<?php echo $event['image']; ?>"
+                                                    <img src="<?php echo app_url('uploads/events/' . $event['image']); ?>"
                                                          alt="<?php echo $event['title']; ?>"
                                                          style="width: 50px; height: 50px; object-fit: cover; cursor: pointer;"
                                                          data-bs-toggle="modal" data-bs-target="#imageModal"
-                                                         data-img="/etick/uploads/events/<?php echo $event['image']; ?>">
+                                                         data-img="<?php echo app_url('uploads/events/' . $event['image']); ?>">
                                                 <?php else: ?>
                                                     <div style="width: 50px; height: 50px; background: #ddd;"></div>
                                                 <?php endif; ?>
@@ -137,7 +137,7 @@ require_once '../includes/header.php';
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm">
-                                                    <a href="/admin/edit-event.php?id=<?php echo $event['id']; ?>"
+                                                    <a href="<?php echo app_url('admin/edit-event.php?id=' . $event['id']); ?>"
                                                        class="btn btn-outline-primary" title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
@@ -258,4 +258,4 @@ imageModal.addEventListener('show.bs.modal', function (event) {
 });
 </script>
 
-<?php require_once '../includes/footer.php'; ?>
+<?php require_once __DIR__ . '/../includes/footer.php'; ?>

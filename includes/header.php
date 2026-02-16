@@ -2,8 +2,7 @@
 require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
-// Base URL for your project
-$baseUrl = '/Etick/'; // adjust if your project folder is different
+$baseUrl = app_base_url();
 ?>
 <!DOCTYPE html>
 <html lang="en">

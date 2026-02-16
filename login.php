@@ -1,19 +1,16 @@
 <?php
-require_once 'config/database.php';
-require_once 'config/session.php';
-require_once 'includes/helpers.php';
-
-// Base URL for project
-$baseUrl = '/Etick/';
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/config/session.php';
+require_once __DIR__ . '/includes/helpers.php';
 
 if (isLoggedIn()) {
-    redirect(isAdmin() ? $baseUrl . 'admin/dashboard.php' : $baseUrl . 'user/dashboard.php');
+    redirect(isAdmin() ? app_url('admin/dashboard.php') : app_url('user/dashboard.php'));
 }
 
 $error = '';
 $success = '';
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $email = sanitize($_POST['email']);
     $password = $_POST['password'];
 
@@ -33,8 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['email'] = $user['email'];
             $_SESSION['role'] = $user['role'];
 
-            // Redirect to proper dashboard with base URL
-            redirect($user['role'] === 'admin' ? $baseUrl . 'admin/dashboard.php' : $baseUrl . 'user/dashboard.php');
+            redirect($user['role'] === 'admin' ? app_url('admin/dashboard.php') : app_url('user/dashboard.php'));
         } else {
             $error = 'Invalid email or password.';
         }
@@ -42,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $pageTitle = 'Login - eTick';
-require_once 'includes/header.php';
+require_once __DIR__ . '/includes/header.php';
 ?>
 
 <div class="container">
@@ -81,7 +77,7 @@ require_once 'includes/header.php';
                     <hr class="my-4">
 
                     <p class="text-center mb-0">
-                        Don't have an account? <a href="<?= $baseUrl ?>register.php">Register here</a>
+                        Don't have an account? <a href="<?php echo app_url('register.php'); ?>">Register here</a>
                     </p>
 
                     <div class="alert alert-info mt-3 mb-0">
@@ -97,4 +93,4 @@ require_once 'includes/header.php';
     </div>
 </div>
 
-<?php require_once 'includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer.php'; ?>
