@@ -13,16 +13,25 @@ $success = '';
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     $fullName = sanitize($_POST['full_name']);
     $email = sanitize($_POST['email']);
-    $phone = sanitize($_POST['phone']);
+    $phoneInput = $_POST['phone'] ?? '';
+    $phoneDigits = preg_replace('/\D+/', '', $phoneInput);
+    if (strpos($phoneDigits, '63') === 0 && strlen($phoneDigits) === 12) {
+        $phoneDigits = substr($phoneDigits, 2);
+    }
+    $phone = '+63' . $phoneDigits;
     $password = $_POST['password'];
     $confirmPassword = $_POST['confirm_password'];
 
-    if (empty($fullName) || empty($email) || empty($password) || empty($confirmPassword)) {
+    if (empty($fullName) || empty($email) || empty($phoneDigits) || empty($password) || empty($confirmPassword)) {
         $error = 'Please fill in all required fields.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please enter a valid email address.';
-    } elseif (strlen($password) < 6) {
-        $error = 'Password must be at least 6 characters long.';
+    } elseif (!preg_match('/^9\d{9}$/', $phoneDigits)) {
+        $error = 'Enter a valid mobile number using 10 digits only (example: 9123456789).';
+    } elseif (!isValidPhilippineMobile($phone)) {
+        $error = 'Mobile number must start with +63 and include 10 digits (e.g. +639123456789).';
+    } elseif (!isStrongPassword($password)) {
+        $error = 'Password must be at least 8 characters and include letters, numbers, and symbols.';
     } elseif ($password !== $confirmPassword) {
         $error = 'Passwords do not match.';
     } else {
@@ -48,7 +57,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
     }
 }
 
-$pageTitle = 'Register - eTick';
+$pageTitle = 'Sign Up - eTick';
 require_once __DIR__ . '/includes/header.php';
 ?>
 
@@ -58,7 +67,7 @@ require_once __DIR__ . '/includes/header.php';
             <div class="card shadow">
                 <div class="card-body p-5">
                     <h2 class="text-center mb-4">
-                        <i class="bi bi-person-plus text-primary"></i> Register
+                        <i class="bi bi-person-plus text-primary"></i> Sign Up
                     </h2>
 
                     <?php if ($error): ?>
@@ -79,15 +88,28 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
 
                         <div class="mb-3">
-                            <label for="phone" class="form-label">Phone Number</label>
-                            <input type="tel" class="form-control" id="phone" name="phone"
-                                   value="<?php echo $_POST['phone'] ?? ''; ?>">
+                            <label for="phone" class="form-label">Mobile Number *</label>
+                            <div class="input-group">
+                                <span class="input-group-text">+63</span>
+                                <input type="tel" class="form-control" id="phone" name="phone"
+                                       value="<?php echo htmlspecialchars($phoneDigits ?? ($_POST['phone'] ?? '')); ?>"
+                                       placeholder="9123456789"
+                                       pattern="^9\d{9}$"
+                                       maxlength="10"
+                                       inputmode="numeric"
+                                       title="Enter 10 digits only, starting with 9."
+                                       required>
+                            </div>
+                           
                         </div>
 
                         <div class="mb-3">
                             <label for="password" class="form-label">Password *</label>
-                            <input type="password" class="form-control" id="password" name="password" required>
-                            <small class="text-muted">Minimum 6 characters</small>
+                            <input type="password" class="form-control" id="password" name="password"
+                                   pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$"
+                                   title="Use at least 8 characters with letters, numbers, and symbols."
+                                   required>
+                            <small class="text-muted">Use at least 8 characters with letters, numbers, and symbols.</small>
                         </div>
 
                         <div class="mb-3">
@@ -96,19 +118,32 @@ require_once __DIR__ . '/includes/header.php';
                         </div>
 
                         <button type="submit" class="btn btn-primary w-100">
-                            <i class="bi bi-person-plus"></i> Register
+                            <i class="bi bi-person-plus"></i> Sign Up
                         </button>
                     </form>
 
                     <hr class="my-4">
 
                     <p class="text-center mb-0">
-                        Already have an account? <a href="login.php">Login here</a>
+                        Already have an account? <a href="login.php">Sign In here</a>
                     </p>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const phoneInput = document.getElementById('phone');
+    if (!phoneInput) {
+        return;
+    }
+
+    phoneInput.addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 10);
+    });
+});
+</script>
 
 <?php require_once __DIR__ . '/includes/footer.php'; ?>

@@ -12,7 +12,7 @@ $conn = $db->connect();
 $statsQuery = "
     SELECT
         (SELECT COUNT(*) FROM events WHERE status = 'active') as total_events,
-        (SELECT COUNT(*) FROM bookings WHERE status = 'confirmed') as total_bookings,
+        (SELECT COUNT(*) FROM bookings) as total_bookings,
         (SELECT COUNT(*) FROM users WHERE role = 'user') as total_users,
         (SELECT COALESCE(SUM(total_amount), 0) FROM bookings WHERE status = 'confirmed') as total_revenue
 ";
@@ -168,7 +168,10 @@ require_once __DIR__ . '/../includes/header.php';
                                             <td>₱<?php echo number_format($booking['total_amount'], 2); ?></td>
                                             <td><?php echo formatDate($booking['booking_date']); ?></td>
                                             <td>
-                                                <span class="badge bg-<?php echo $booking['status'] === 'confirmed' ? 'success' : 'warning'; ?>">
+                                                <span class="badge bg-<?php
+                                                    echo $booking['status'] === 'confirmed' ? 'success' :
+                                                        ($booking['status'] === 'cancelled' ? 'danger' : 'warning');
+                                                ?>">
                                                     <?php echo ucfirst($booking['status']); ?>
                                                 </span>
                                             </td>

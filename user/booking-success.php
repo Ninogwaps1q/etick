@@ -30,7 +30,10 @@ if (!$booking) {
     redirect($baseUrl . 'user/dashboard.php');
 }
 
-$pageTitle = 'Booking Confirmed - eTick';
+$isPending = ($booking['status'] === 'pending');
+$isCancelled = ($booking['status'] === 'cancelled');
+
+$pageTitle = $isPending ? 'Booking Pending - eTick' : 'Booking Details - eTick';
 require_once __DIR__ . '/../includes/header.php';
 ?>
 
@@ -40,12 +43,26 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="card shadow">
                 <div class="card-body text-center p-5">
                     <div class="mb-4">
-                        <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+                        <?php if ($isPending): ?>
+                            <i class="bi bi-hourglass-split text-warning" style="font-size: 5rem;"></i>
+                        <?php elseif ($isCancelled): ?>
+                            <i class="bi bi-x-circle-fill text-danger" style="font-size: 5rem;"></i>
+                        <?php else: ?>
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+                        <?php endif; ?>
                     </div>
 
-                    <h2 class="text-success mb-3">Booking Confirmed!</h2>
+                    <h2 class="mb-3 <?php echo $isPending ? 'text-warning' : ($isCancelled ? 'text-danger' : 'text-success'); ?>">
+                        <?php echo $isPending ? 'Booking Pending Approval' : ($isCancelled ? 'Booking Cancelled' : 'Booking Confirmed'); ?>!
+                    </h2>
                     <p class="lead text-muted mb-4">
-                        Your tickets have been successfully booked. You will receive a confirmation email shortly.
+                        <?php if ($isPending): ?>
+                            Your booking has been submitted and is waiting for admin confirmation.
+                        <?php elseif ($isCancelled): ?>
+                            This booking has been cancelled. Contact support if you need assistance.
+                        <?php else: ?>
+                            Your tickets have been successfully booked.
+                        <?php endif; ?>
                     </p>
 
                     <div class="card bg-light mb-4">
@@ -76,6 +93,13 @@ require_once __DIR__ . '/../includes/header.php';
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">Number of Tickets</small>
                                     <strong><?php echo $booking['ticket_quantity']; ?></strong>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Status</small>
+                                    <strong class="<?php echo $isPending ? 'text-warning' : ($isCancelled ? 'text-danger' : 'text-success'); ?>">
+                                        <?php echo ucfirst($booking['status']); ?>
+                                    </strong>
                                 </div>
 
                                 <div class="col-md-6 mb-3">

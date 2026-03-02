@@ -52,8 +52,8 @@ $baseUrl = app_base_url();
                         </ul>
                     </li>
                 <?php else: ?>
-                    <li class="nav-item"><a class="nav-link" href="<?= $baseUrl ?>login.php">Login</a></li>
-                    <li class="nav-item"><a class="nav-link" href="<?= $baseUrl ?>register.php">Register</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= $baseUrl ?>login.php">Sign In</a></li>
+                    <li class="nav-item"><a class="nav-link" href="<?= $baseUrl ?>register.php">Sign Up</a></li>
                 <?php endif; ?>
 
             </ul>

@@ -41,7 +41,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['book'])) {
         $conn->beginTransaction();
 
         try {
-            $stmt = $conn->prepare("INSERT INTO bookings (user_id, event_id, ticket_quantity, total_amount, booking_reference, status, payment_method) VALUES (?, ?, ?, ?, ?, 'confirmed', ?)");
+            $stmt = $conn->prepare("INSERT INTO bookings (user_id, event_id, ticket_quantity, total_amount, booking_reference, status, payment_method) VALUES (?, ?, ?, ?, ?, 'pending', ?)");
             $stmt->execute([getUserId(), $eventId, $ticketQuantity, $totalAmount, $bookingReference, $paymentMethod]);
 
             $stmt = $conn->prepare("UPDATE events SET available_tickets = available_tickets - ? WHERE id = ?");
@@ -169,7 +169,7 @@ require_once __DIR__ . '/includes/header.php';
                                 </button>
                             <?php else: ?>
                                 <a href="login.php" class="btn btn-primary w-100 btn-lg">
-                                    <i class="bi bi-box-arrow-in-right"></i> Login to Book
+                                    <i class="bi bi-box-arrow-in-right"></i> Sign In to Book
                                 </a>
                             <?php endif; ?>
                         </form>

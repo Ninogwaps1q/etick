@@ -66,3 +66,12 @@ function showAlert($message, $type = 'info') {
                 <button type='button' class='btn-close' data-bs-dismiss='alert'></button>
             </div>";
 }
+
+function isStrongPassword($password) {
+    // At least 8 chars with letter, number, and symbol.
+    return (bool) preg_match('/^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/', $password);
+}
+
+function isValidPhilippineMobile($phone) {
+    return (bool) preg_match('/^\+63\d{10}$/', $phone);
+}

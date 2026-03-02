@@ -150,7 +150,7 @@
                                 <p class="mb-0">&#10003; All checks passed! Your system is ready.</p>
                                 <p class="mt-2 mb-0">
                                     <a href="index.php" class="btn btn-primary">Go to Homepage</a>
-                                    <a href="login.php" class="btn btn-success ms-2">Login</a>
+                                    <a href="login.php" class="btn btn-success ms-2">Sign In</a>
                                 </p>
                             <?php else: ?>
                                 <p class="mb-0">Please fix the issues marked above and refresh this page.</p>
@@ -158,7 +158,7 @@
                         </div>
 
                         <div class="alert alert-warning mt-3">
-                            <strong>Default Admin Login:</strong><br>
+                            <strong>Default Admin Sign In:</strong><br>
                             Email: admin@etick.com<br>
                             Password: admin123
                         </div>

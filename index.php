@@ -8,6 +8,7 @@ $conn = $db->connect();
 
 $eventsQuery = "SELECT * FROM events WHERE status = 'active' AND event_date > NOW() ORDER BY event_date ASC LIMIT 6";
 $events = $conn->query($eventsQuery)->fetchAll();
+$nearEvents = array_slice($events, 0, 3);
 
 $pageTitle = 'eTick - Event Ticketing System';
 require_once __DIR__ . '/includes/header.php';
@@ -36,6 +37,45 @@ require_once __DIR__ . '/includes/header.php';
         </div>
     </div>
 </div>
+
+<?php if (!empty($nearEvents)): ?>
+    <div class="container my-5">
+        <div class="row mb-4">
+            <div class="col text-center">
+                <h2 class="fw-bold">Near You Highlights</h2>
+                <p class="text-muted">Quick look at upcoming events around your area</p>
+            </div>
+        </div>
+        <div class="row g-4">
+            <?php foreach ($nearEvents as $event): ?>
+                <div class="col-md-4">
+                    <a href="event-details.php?id=<?php echo $event['id']; ?>" class="text-decoration-none">
+                        <div class="near-event-card shadow-sm">
+                            <?php if (!empty($event['image'])): ?>
+                                <img src="uploads/events/<?php echo $event['image']; ?>"
+                                     alt="<?php echo htmlspecialchars($event['title']); ?>"
+                                     class="near-event-image">
+                            <?php else: ?>
+                                <div class="near-event-image-placeholder">
+                                    <i class="bi bi-image fs-1 text-white"></i>
+                                </div>
+                            <?php endif; ?>
+                            <div class="near-event-content">
+                                <h5 class="mb-1 text-dark"><?php echo htmlspecialchars($event['title']); ?></h5>
+                                <p class="mb-2 text-muted small">
+                                    <i class="bi bi-geo-alt"></i> <?php echo htmlspecialchars($event['location']); ?>
+                                </p>
+                                <p class="mb-0 text-muted small">
+                                    <i class="bi bi-calendar-event"></i> <?php echo date('M j, Y - g:i A', strtotime($event['event_date'])); ?>
+                                </p>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+<?php endif; ?>
 
 <div class="container my-5">
     <div class="row mb-4">

@@ -47,6 +47,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $error = 'Name and email are required.';
     } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please provide a valid email address.';
+    } elseif (!empty($password) && !isStrongPassword($password)) {
+        $error = 'New password must be at least 8 characters and include letters, numbers, and symbols.';
     }
 
     if (empty($error)) {
@@ -123,7 +125,11 @@ require_once __DIR__ . '/includes/header.php';
 
                     <div class="mb-3">
                         <label for="password" class="form-label">New Password</label>
-                        <input type="password" id="password" name="password" class="form-control" placeholder="Leave blank to keep current">
+                        <input type="password" id="password" name="password" class="form-control"
+                               placeholder="Leave blank to keep current"
+                               pattern="^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$"
+                               title="Use at least 8 characters with letters, numbers, and symbols.">
+                        <small class="text-muted">Use at least 8 characters with letters, numbers, and symbols.</small>
                     </div>
 
                     <div class="mb-3">

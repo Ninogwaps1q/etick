@@ -24,17 +24,27 @@ $stmt = $conn->prepare($bookingsQuery);
 $stmt->execute([$userId]);
 $bookings = $stmt->fetchAll();
 
+// Fetch confirmed ticket details for QR display
+$ticketsQuery = "
+    SELECT b.booking_reference, b.ticket_quantity, b.total_amount, b.booking_date, e.title, e.event_date, e.location
+    FROM bookings b
+    JOIN events e ON b.event_id = e.id
+    WHERE b.user_id = ? AND b.status = 'confirmed'
+    ORDER BY b.booking_date DESC
+";
+$stmt = $conn->prepare($ticketsQuery);
+$stmt->execute([$userId]);
+$ticketDetails = $stmt->fetchAll();
+
 // Fetch stats
 $statsQuery = "
     SELECT
-        COUNT(*) as total_bookings,
-        COALESCE(SUM(total_amount), 0) as total_spent,
-        COALESCE(SUM(ticket_quantity), 0) as total_tickets
-    FROM bookings
-    WHERE user_id = ? AND status = 'confirmed'
+        (SELECT COUNT(*) FROM bookings WHERE user_id = ?) as total_bookings,
+        (SELECT COALESCE(SUM(total_amount), 0) FROM bookings WHERE user_id = ? AND status = 'confirmed') as total_spent,
+        (SELECT COALESCE(SUM(ticket_quantity), 0) FROM bookings WHERE user_id = ? AND status = 'confirmed') as total_tickets
 ";
 $stmt = $conn->prepare($statsQuery);
-$stmt->execute([$userId]);
+$stmt->execute([$userId, $userId, $userId]);
 $stats = $stmt->fetch();
 
 $pageTitle = 'My Bookings - eTick';
@@ -65,17 +75,23 @@ require_once __DIR__ . '/../includes/header.php';
         </div>
 
         <div class="col-md-4">
-            <div class="card bg-success text-white shadow">
+            <button type="button"
+                    class="card bg-success text-white shadow total-tickets-toggle border-0 w-100 text-start"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#ticketDetailsSection"
+                    aria-expanded="false"
+                    aria-controls="ticketDetailsSection">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
-                            <h6 class="card-title">Total Tickets</h6>
+                            <h6 class="card-title mb-1">Total Tickets</h6>
                             <h2 class="mb-0"><?php echo $stats['total_tickets']; ?></h2>
+                            <small class="text-white-50">Click to view ticket info + QR codes</small>
                         </div>
                         <i class="bi bi-ticket-detailed fs-1"></i>
                     </div>
                 </div>
-            </div>
+            </button>
         </div>
 
         <div class="col-md-4">
@@ -89,6 +105,53 @@ require_once __DIR__ . '/../includes/header.php';
                         <i class="fs-1 bi bi-currency-dollar" style="display:none;"></i>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="collapse mb-4" id="ticketDetailsSection">
+        <div class="card shadow-sm border-success">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="bi bi-qr-code"></i> Ticket Information and QR Codes</h5>
+            </div>
+            <div class="card-body">
+                <?php if (empty($ticketDetails)): ?>
+                    <div class="alert alert-warning mb-0">
+                        No confirmed tickets yet. Book an event to generate your QR ticket.
+                    </div>
+                <?php else: ?>
+                    <div class="row g-3">
+                        <?php foreach ($ticketDetails as $ticket): ?>
+                            <?php
+                                $qrPayload = 'Reference: ' . $ticket['booking_reference']
+                                    . ' | Event: ' . $ticket['title']
+                                    . ' | Date: ' . formatDate($ticket['event_date'])
+                                    . ' | Location: ' . $ticket['location']
+                                    . ' | Tickets: ' . $ticket['ticket_quantity'];
+                            ?>
+                            <div class="col-md-6">
+                                <div class="card h-100 border">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-8">
+                                                <h6 class="fw-bold mb-2"><?php echo htmlspecialchars($ticket['title']); ?></h6>
+                                                <p class="mb-1"><small><i class="bi bi-upc-scan"></i> <?php echo htmlspecialchars($ticket['booking_reference']); ?></small></p>
+                                                <p class="mb-1"><small><i class="bi bi-calendar"></i> <?php echo formatDate($ticket['event_date']); ?></small></p>
+                                                <p class="mb-1"><small><i class="bi bi-geo-alt"></i> <?php echo htmlspecialchars($ticket['location']); ?></small></p>
+                                                <p class="mb-0"><small><strong>Tickets:</strong> <?php echo (int) $ticket['ticket_quantity']; ?></small></p>
+                                            </div>
+                                            <div class="col-4 text-end">
+                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=<?php echo rawurlencode($qrPayload); ?>"
+                                                     alt="QR code for <?php echo htmlspecialchars($ticket['booking_reference']); ?>"
+                                                     class="img-fluid border rounded p-1 bg-white">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
             </div>
         </div>
     </div>

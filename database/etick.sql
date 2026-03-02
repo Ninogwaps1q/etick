@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS bookings (
     ticket_quantity INT NOT NULL,
     total_amount DECIMAL(10, 2) NOT NULL,
     booking_reference VARCHAR(20) UNIQUE NOT NULL,
-    status ENUM('confirmed', 'cancelled', 'pending') DEFAULT 'confirmed',
+    status ENUM('confirmed', 'cancelled', 'pending') DEFAULT 'pending',
     payment_method VARCHAR(50) NOT NULL DEFAULT 'Unpaid',
     booking_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
