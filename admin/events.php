@@ -4,10 +4,11 @@ require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 requireLogin();
-requireAdmin();
+requireEventManager();
 
 $db = new Database();
 $conn = $db->connect();
+$canViewAllEvents = isAdmin();
 
 $success = '';
 $error = '';
@@ -41,26 +42,47 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         }
     } elseif ($_POST['action'] === 'delete') {
         $eventId = (int)$_POST['event_id'];
-        $stmt = $conn->prepare("DELETE FROM events WHERE id = ?");
-        if ($stmt->execute([$eventId])) {
+        if ($canViewAllEvents) {
+            $stmt = $conn->prepare("DELETE FROM events WHERE id = ?");
+            $stmt->execute([$eventId]);
+        } else {
+            $stmt = $conn->prepare("DELETE FROM events WHERE id = ? AND created_by = ?");
+            $stmt->execute([$eventId, getUserId()]);
+        }
+
+        if ($stmt->rowCount() > 0) {
             $success = 'Event deleted successfully!';
         } else {
-            $error = 'Failed to delete event.';
+            $error = 'Failed to delete event or permission denied.';
         }
     } elseif ($_POST['action'] === 'update_status') {
         $eventId = (int)$_POST['event_id'];
         $status = $_POST['status'];
-        $stmt = $conn->prepare("UPDATE events SET status = ? WHERE id = ?");
-        if ($stmt->execute([$status, $eventId])) {
+        if ($canViewAllEvents) {
+            $stmt = $conn->prepare("UPDATE events SET status = ? WHERE id = ?");
+            $stmt->execute([$status, $eventId]);
+        } else {
+            $stmt = $conn->prepare("UPDATE events SET status = ? WHERE id = ? AND created_by = ?");
+            $stmt->execute([$status, $eventId, getUserId()]);
+        }
+
+        if ($stmt->rowCount() > 0) {
             $success = 'Event status updated!';
         } else {
-            $error = 'Failed to update status.';
+            $error = 'Failed to update status or permission denied.';
         }
     }
 }
 
-$eventsQuery = "SELECT * FROM events ORDER BY created_at DESC";
-$events = $conn->query($eventsQuery)->fetchAll();
+if ($canViewAllEvents) {
+    $eventsQuery = "SELECT * FROM events ORDER BY created_at DESC";
+    $events = $conn->query($eventsQuery)->fetchAll();
+} else {
+    $eventsQuery = "SELECT * FROM events WHERE created_by = ? ORDER BY created_at DESC";
+    $stmt = $conn->prepare($eventsQuery);
+    $stmt->execute([getUserId()]);
+    $events = $stmt->fetchAll();
+}
 
 $pageTitle = 'Manage Events - eTick Admin';
 require_once __DIR__ . '/../includes/header.php';

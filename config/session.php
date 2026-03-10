@@ -52,8 +52,28 @@ function isLoggedIn() {
     return isset($_SESSION['user_id']);
 }
 
+function normalizeUserRole($role) {
+    if ($role === 'user') {
+        return 'customer';
+    }
+
+    return $role ?: 'customer';
+}
+
+function getUserRole() {
+    return normalizeUserRole($_SESSION['role'] ?? 'customer');
+}
+
 function isAdmin() {
-    return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+    return getUserRole() === 'admin';
+}
+
+function isOrganizer() {
+    return getUserRole() === 'organizer';
+}
+
+function canManageEvents() {
+    return isAdmin() || isOrganizer();
 }
 
 function requireLogin() {
@@ -70,14 +90,17 @@ function requireAdmin() {
     }
 }
 
+function requireEventManager() {
+    if (!canManageEvents()) {
+        header('Location: ' . app_url('index.php'));
+        exit();
+    }
+}
+
 function getUserId() {
     return $_SESSION['user_id'] ?? null;
 }
 
 function getUserName() {
     return $_SESSION['user_name'] ?? 'Guest';
-}
-
-function getUserRole() {
-    return $_SESSION['role'] ?? 'user';
 }

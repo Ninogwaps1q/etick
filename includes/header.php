@@ -37,6 +37,8 @@ $baseUrl = app_base_url();
                 <?php if (isLoggedIn()): ?>
                     <?php if (isAdmin()): ?>
                         <li class="nav-item"><a class="nav-link" href="<?= $baseUrl ?>admin/dashboard.php">Admin Dashboard</a></li>
+                    <?php elseif (isOrganizer()): ?>
+                        <li class="nav-item"><a class="nav-link" href="<?= $baseUrl ?>admin/events.php">Manage Events</a></li>
                     <?php else: ?>
                         <li class="nav-item"><a class="nav-link" href="<?= $baseUrl ?>user/dashboard.php">My Bookings</a></li>
                     <?php endif; ?>

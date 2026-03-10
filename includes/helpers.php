@@ -13,7 +13,7 @@ function formatDate($date) {
 }
 
 function formatPrice($price) {
-    return '$' . number_format($price, 2);
+    return 'PHP ' . number_format($price, 2);
 }
 
 function generateBookingReference() {
@@ -74,4 +74,47 @@ function isStrongPassword($password) {
 
 function isValidPhilippineMobile($phone) {
     return (bool) preg_match('/^\+63\d{10}$/', $phone);
+}
+
+function getTicketTypeOptions() {
+    return [
+        [
+            'code' => 'Regular',
+            'label' => 'Regular',
+            'multiplier' => 1.00,
+            'description' => 'Standard event access',
+        ],
+        [
+            'code' => 'VIP',
+            'label' => 'VIP',
+            'multiplier' => 1.50,
+            'description' => 'Premium entry and priority sections',
+        ],
+        [
+            'code' => 'Premium',
+            'label' => 'Premium',
+            'multiplier' => 1.25,
+            'description' => 'Enhanced access tier',
+        ],
+    ];
+}
+
+function getTicketTypeByCode($ticketTypeCode) {
+    foreach (getTicketTypeOptions() as $ticketType) {
+        if (strcasecmp($ticketType['code'], $ticketTypeCode) === 0) {
+            return $ticketType;
+        }
+    }
+
+    $ticketTypes = getTicketTypeOptions();
+    return $ticketTypes[0];
+}
+
+function calculateTicketUnitPrice($basePrice, $ticketTypeCode) {
+    $ticketType = getTicketTypeByCode($ticketTypeCode);
+    return round(((float) $basePrice) * ((float) $ticketType['multiplier']), 2);
+}
+
+function calculateTicketTotal($basePrice, $ticketTypeCode, $ticketQuantity) {
+    return round(calculateTicketUnitPrice($basePrice, $ticketTypeCode) * (int) $ticketQuantity, 2);
 }

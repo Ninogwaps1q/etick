@@ -6,7 +6,6 @@ require_once __DIR__ . '/../includes/helpers.php';
 requireLogin();
 
 $baseUrl = app_base_url();
-
 $bookingRef = isset($_GET['ref']) ? sanitize($_GET['ref']) : '';
 
 if (!$bookingRef) {
@@ -16,7 +15,6 @@ if (!$bookingRef) {
 $db = new Database();
 $conn = $db->connect();
 
-// Fetch booking details
 $stmt = $conn->prepare("
     SELECT b.*, e.title, e.event_date, e.location
     FROM bookings b
@@ -32,6 +30,8 @@ if (!$booking) {
 
 $isPending = ($booking['status'] === 'pending');
 $isCancelled = ($booking['status'] === 'cancelled');
+$ticketType = !empty($booking['ticket_type']) ? $booking['ticket_type'] : 'Regular';
+$unitPrice = (float) ($booking['unit_price'] ?? 0);
 
 $pageTitle = $isPending ? 'Booking Pending - eTick' : 'Booking Details - eTick';
 require_once __DIR__ . '/../includes/header.php';
@@ -53,11 +53,11 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
 
                     <h2 class="mb-3 <?php echo $isPending ? 'text-warning' : ($isCancelled ? 'text-danger' : 'text-success'); ?>">
-                        <?php echo $isPending ? 'Booking Pending Approval' : ($isCancelled ? 'Booking Cancelled' : 'Booking Confirmed'); ?>!
+                        <?php echo $isPending ? 'Booking Pending Approval' : ($isCancelled ? 'Booking Cancelled' : 'Booking Confirmed'); ?>
                     </h2>
                     <p class="lead text-muted mb-4">
                         <?php if ($isPending): ?>
-                            Your booking has been submitted and is waiting for admin confirmation.
+                            Your booking has been submitted and is waiting for confirmation.
                         <?php elseif ($isCancelled): ?>
                             This booking has been cancelled. Contact support if you need assistance.
                         <?php else: ?>
@@ -72,27 +72,37 @@ require_once __DIR__ . '/../includes/header.php';
                             <div class="row text-start">
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">Booking Reference</small>
-                                    <strong class="text-primary fs-5"><?php echo $booking['booking_reference']; ?></strong>
+                                    <strong class="text-primary fs-5"><?php echo htmlspecialchars($booking['booking_reference']); ?></strong>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">Event</small>
-                                    <strong><?php echo $booking['title']; ?></strong>
+                                    <strong><?php echo htmlspecialchars($booking['title']); ?></strong>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
-                                    <small class="text-muted d-block">Event Date & Time</small>
+                                    <small class="text-muted d-block">Event Date and Time</small>
                                     <strong><?php echo formatDate($booking['event_date']); ?></strong>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">Location</small>
-                                    <strong><?php echo $booking['location']; ?></strong>
+                                    <strong><?php echo htmlspecialchars($booking['location']); ?></strong>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Ticket Type</small>
+                                    <strong><?php echo htmlspecialchars($ticketType); ?></strong>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
                                     <small class="text-muted d-block">Number of Tickets</small>
-                                    <strong><?php echo $booking['ticket_quantity']; ?></strong>
+                                    <strong><?php echo (int) $booking['ticket_quantity']; ?></strong>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <small class="text-muted d-block">Unit Price</small>
+                                    <strong>PHP <?php echo number_format($unitPrice, 2); ?></strong>
                                 </div>
 
                                 <div class="col-md-6 mb-3">
@@ -117,10 +127,10 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
 
                     <div class="d-flex gap-3 justify-content-center mt-4">
-                        <a href="<?= $baseUrl ?>user/dashboard.php" class="btn btn-primary btn-lg">
+                        <a href="<?php echo $baseUrl; ?>user/dashboard.php" class="btn btn-primary btn-lg">
                             <i class="bi bi-speedometer2"></i> Go to Dashboard
                         </a>
-                        <a href="<?= $baseUrl ?>events.php" class="btn btn-outline-primary btn-lg">
+                        <a href="<?php echo $baseUrl; ?>events.php" class="btn btn-outline-primary btn-lg">
                             <i class="bi bi-search"></i> Browse More Events
                         </a>
                     </div>
@@ -131,4 +141,3 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
-

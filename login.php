@@ -3,8 +3,22 @@ require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/config/session.php';
 require_once __DIR__ . '/includes/helpers.php';
 
+function getDashboardByRole($role) {
+    $normalizedRole = normalizeUserRole($role);
+
+    if ($normalizedRole === 'admin') {
+        return app_url('admin/dashboard.php');
+    }
+
+    if ($normalizedRole === 'organizer') {
+        return app_url('admin/events.php');
+    }
+
+    return app_url('user/dashboard.php');
+}
+
 if (isLoggedIn()) {
-    redirect(isAdmin() ? app_url('admin/dashboard.php') : app_url('user/dashboard.php'));
+    redirect(getDashboardByRole(getUserRole()));
 }
 
 $error = '';
@@ -28,9 +42,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['full_name'];
             $_SESSION['email'] = $user['email'];
-            $_SESSION['role'] = $user['role'];
+            $_SESSION['role'] = normalizeUserRole($user['role']);
 
-            redirect($user['role'] === 'admin' ? app_url('admin/dashboard.php') : app_url('user/dashboard.php'));
+            redirect(getDashboardByRole($user['role']));
         } else {
             $error = 'Invalid email or password.';
         }

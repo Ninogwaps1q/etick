@@ -12,7 +12,6 @@ $conn = $db->connect();
 
 $userId = getUserId();
 
-// Fetch bookings
 $bookingsQuery = "
     SELECT b.*, e.title, e.event_date, e.location, e.image
     FROM bookings b
@@ -24,19 +23,48 @@ $stmt = $conn->prepare($bookingsQuery);
 $stmt->execute([$userId]);
 $bookings = $stmt->fetchAll();
 
-// Fetch confirmed ticket details for QR display
-$ticketsQuery = "
-    SELECT b.booking_reference, b.ticket_quantity, b.total_amount, b.booking_date, e.title, e.event_date, e.location
+$ticketBookingsQuery = "
+    SELECT b.id, b.booking_reference, b.ticket_type, b.unit_price, b.ticket_quantity, b.total_amount, b.booking_date,
+           e.title, e.event_date, e.location
     FROM bookings b
     JOIN events e ON b.event_id = e.id
     WHERE b.user_id = ? AND b.status = 'confirmed'
     ORDER BY b.booking_date DESC
 ";
-$stmt = $conn->prepare($ticketsQuery);
+$stmt = $conn->prepare($ticketBookingsQuery);
 $stmt->execute([$userId]);
-$ticketDetails = $stmt->fetchAll();
+$ticketBookings = $stmt->fetchAll();
 
-// Fetch stats
+$individualTickets = [];
+foreach ($ticketBookings as $ticketBooking) {
+    $ticketCount = max(1, (int) $ticketBooking['ticket_quantity']);
+
+    for ($ticketNumber = 1; $ticketNumber <= $ticketCount; $ticketNumber++) {
+        $ticketCode = $ticketBooking['booking_reference'] . '-' . str_pad((string) $ticketNumber, 2, '0', STR_PAD_LEFT);
+        $ticketType = !empty($ticketBooking['ticket_type']) ? $ticketBooking['ticket_type'] : 'Regular';
+        $unitPrice = (float) ($ticketBooking['unit_price'] ?? 0);
+
+        $qrPayload = 'Ticket Code: ' . $ticketCode
+            . ' | Booking Ref: ' . $ticketBooking['booking_reference']
+            . ' | Event: ' . $ticketBooking['title']
+            . ' | Ticket Type: ' . $ticketType
+            . ' | Date: ' . formatDate($ticketBooking['event_date'])
+            . ' | Location: ' . $ticketBooking['location'];
+
+        $individualTickets[] = [
+            'event_title' => $ticketBooking['title'],
+            'event_date' => $ticketBooking['event_date'],
+            'location' => $ticketBooking['location'],
+            'booking_reference' => $ticketBooking['booking_reference'],
+            'ticket_type' => $ticketType,
+            'unit_price' => $unitPrice,
+            'ticket_number' => $ticketNumber,
+            'ticket_code' => $ticketCode,
+            'qr_payload' => $qrPayload,
+        ];
+    }
+}
+
 $statsQuery = "
     SELECT
         (SELECT COUNT(*) FROM bookings WHERE user_id = ?) as total_bookings,
@@ -55,7 +83,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="row mb-4">
         <div class="col">
             <h2><i class="bi bi-person-circle"></i> My Dashboard</h2>
-            <p class="text-muted">Welcome back, <?php echo getUserName(); ?>!</p>
+            <p class="text-muted">Welcome back, <?php echo htmlspecialchars(getUserName()); ?>!</p>
         </div>
     </div>
 
@@ -66,7 +94,7 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title">Total Bookings</h6>
-                            <h2 class="mb-0"><?php echo $stats['total_bookings']; ?></h2>
+                            <h2 class="mb-0"><?php echo (int) $stats['total_bookings']; ?></h2>
                         </div>
                         <i class="bi bi-ticket-perforated fs-1"></i>
                     </div>
@@ -85,8 +113,8 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title mb-1">Total Tickets</h6>
-                            <h2 class="mb-0"><?php echo $stats['total_tickets']; ?></h2>
-                            <small class="text-white-50">Click to view ticket info + QR codes</small>
+                            <h2 class="mb-0"><?php echo (int) $stats['total_tickets']; ?></h2>
+                            <small class="text-white-50">Click to view each ticket QR and details</small>
                         </div>
                         <i class="bi bi-ticket-detailed fs-1"></i>
                     </div>
@@ -100,9 +128,9 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <h6 class="card-title">Total Spent</h6>
-                            <h2 class="mb-0">₱<?php echo number_format($stats['total_spent'], 2); ?></h2>
+                            <h2 class="mb-0">&#8369;<?php echo number_format((float) $stats['total_spent'], 2); ?></h2>
                         </div>
-                        <i class="fs-1 bi bi-currency-dollar" style="display:none;"></i>
+                        <i class="bi bi-cash-stack fs-1"></i>
                     </div>
                 </div>
             </div>
@@ -112,37 +140,35 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="collapse mb-4" id="ticketDetailsSection">
         <div class="card shadow-sm border-success">
             <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="bi bi-qr-code"></i> Ticket Information and QR Codes</h5>
+                <h5 class="mb-0"><i class="bi bi-qr-code"></i> Confirmed Tickets with QR Codes</h5>
             </div>
             <div class="card-body">
-                <?php if (empty($ticketDetails)): ?>
+                <?php if (empty($individualTickets)): ?>
                     <div class="alert alert-warning mb-0">
-                        No confirmed tickets yet. Book an event to generate your QR ticket.
+                        No confirmed tickets yet. Book an event to generate your QR tickets.
                     </div>
                 <?php else: ?>
+                    <div class="alert alert-light border mb-3">
+                        <strong><?php echo count($individualTickets); ?></strong> ticket(s) ready for entry.
+                    </div>
                     <div class="row g-3">
-                        <?php foreach ($ticketDetails as $ticket): ?>
-                            <?php
-                                $qrPayload = 'Reference: ' . $ticket['booking_reference']
-                                    . ' | Event: ' . $ticket['title']
-                                    . ' | Date: ' . formatDate($ticket['event_date'])
-                                    . ' | Location: ' . $ticket['location']
-                                    . ' | Tickets: ' . $ticket['ticket_quantity'];
-                            ?>
+                        <?php foreach ($individualTickets as $ticket): ?>
                             <div class="col-md-6">
                                 <div class="card h-100 border">
                                     <div class="card-body">
                                         <div class="row align-items-center">
                                             <div class="col-8">
-                                                <h6 class="fw-bold mb-2"><?php echo htmlspecialchars($ticket['title']); ?></h6>
-                                                <p class="mb-1"><small><i class="bi bi-upc-scan"></i> <?php echo htmlspecialchars($ticket['booking_reference']); ?></small></p>
+                                                <h6 class="fw-bold mb-2"><?php echo htmlspecialchars($ticket['event_title']); ?></h6>
+                                                <p class="mb-1"><small><i class="bi bi-upc-scan"></i> <?php echo htmlspecialchars($ticket['ticket_code']); ?></small></p>
+                                                <p class="mb-1"><small><i class="bi bi-hash"></i> Booking: <?php echo htmlspecialchars($ticket['booking_reference']); ?></small></p>
+                                                <p class="mb-1"><small><i class="bi bi-star"></i> <?php echo htmlspecialchars($ticket['ticket_type']); ?></small></p>
                                                 <p class="mb-1"><small><i class="bi bi-calendar"></i> <?php echo formatDate($ticket['event_date']); ?></small></p>
                                                 <p class="mb-1"><small><i class="bi bi-geo-alt"></i> <?php echo htmlspecialchars($ticket['location']); ?></small></p>
-                                                <p class="mb-0"><small><strong>Tickets:</strong> <?php echo (int) $ticket['ticket_quantity']; ?></small></p>
+                                                <p class="mb-0"><small><strong>Price:</strong> &#8369;<?php echo number_format((float) $ticket['unit_price'], 2); ?></small></p>
                                             </div>
                                             <div class="col-4 text-end">
-                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=<?php echo rawurlencode($qrPayload); ?>"
-                                                     alt="QR code for <?php echo htmlspecialchars($ticket['booking_reference']); ?>"
+                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=<?php echo rawurlencode($ticket['qr_payload']); ?>"
+                                                     alt="QR code for <?php echo htmlspecialchars($ticket['ticket_code']); ?>"
                                                      class="img-fluid border rounded p-1 bg-white">
                                             </div>
                                         </div>
@@ -167,8 +193,8 @@ require_once __DIR__ . '/../includes/header.php';
                         <div class="text-center py-5">
                             <i class="bi bi-ticket text-muted" style="font-size: 4rem;"></i>
                             <h4 class="mt-3 text-muted">No bookings yet</h4>
-                            <p class="text-muted">Start exploring events and book your tickets!</p>
-                            <a href="<?= $baseUrl ?>events.php" class="btn btn-primary">
+                            <p class="text-muted">Start exploring events and book your tickets.</p>
+                            <a href="<?php echo $baseUrl; ?>events.php" class="btn btn-primary">
                                 <i class="bi bi-search"></i> Browse Events
                             </a>
                         </div>
@@ -177,11 +203,11 @@ require_once __DIR__ . '/../includes/header.php';
                             <?php foreach ($bookings as $booking): ?>
                                 <div class="col-md-6">
                                     <div class="card h-100 border">
-                                        <div class="row g-0">
+                                        <div class="row g-0 h-100">
                                             <div class="col-md-4">
-                                                <?php if ($booking['image']): ?>
-                                                    <img src="<?= $baseUrl ?>uploads/events/<?php echo $booking['image']; ?>"
-                                                         class="img-fluid h-100" alt="<?php echo $booking['title']; ?>"
+                                                <?php if (!empty($booking['image'])): ?>
+                                                    <img src="<?php echo $baseUrl; ?>uploads/events/<?php echo htmlspecialchars($booking['image']); ?>"
+                                                         class="img-fluid h-100" alt="<?php echo htmlspecialchars($booking['title']); ?>"
                                                          style="object-fit: cover;">
                                                 <?php else: ?>
                                                     <div class="bg-secondary h-100 d-flex align-items-center justify-content-center">
@@ -191,7 +217,7 @@ require_once __DIR__ . '/../includes/header.php';
                                             </div>
                                             <div class="col-md-8">
                                                 <div class="card-body">
-                                                    <h5 class="card-title"><?php echo $booking['title']; ?></h5>
+                                                    <h5 class="card-title"><?php echo htmlspecialchars($booking['title']); ?></h5>
 
                                                     <p class="mb-2">
                                                         <small class="text-muted">
@@ -203,7 +229,7 @@ require_once __DIR__ . '/../includes/header.php';
                                                     <p class="mb-2">
                                                         <small class="text-muted">
                                                             <i class="bi bi-geo-alt"></i>
-                                                            <?php echo $booking['location']; ?>
+                                                            <?php echo htmlspecialchars($booking['location']); ?>
                                                         </small>
                                                     </p>
 
@@ -211,17 +237,27 @@ require_once __DIR__ . '/../includes/header.php';
 
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                                         <span>Booking Ref:</span>
-                                                        <strong class="text-primary"><?php echo $booking['booking_reference']; ?></strong>
+                                                        <strong class="text-primary"><?php echo htmlspecialchars($booking['booking_reference']); ?></strong>
+                                                    </div>
+
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span>Ticket Type:</span>
+                                                        <strong><?php echo htmlspecialchars($booking['ticket_type'] ?: 'Regular'); ?></strong>
                                                     </div>
 
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                                         <span>Tickets:</span>
-                                                        <strong><?php echo $booking['ticket_quantity']; ?></strong>
+                                                        <strong><?php echo (int) $booking['ticket_quantity']; ?></strong>
+                                                    </div>
+
+                                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                                        <span>Unit Price:</span>
+                                                        <strong>&#8369;<?php echo number_format((float) ($booking['unit_price'] ?? 0), 2); ?></strong>
                                                     </div>
 
                                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                                         <span>Total:</span>
-                                                        <strong>₱<?php echo number_format($booking['total_amount'], 2); ?></strong>
+                                                        <strong>&#8369;<?php echo number_format((float) $booking['total_amount'], 2); ?></strong>
                                                     </div>
 
                                                     <div class="d-flex justify-content-between align-items-center">
@@ -248,4 +284,3 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
-

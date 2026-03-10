@@ -4,17 +4,26 @@ require_once __DIR__ . '/../config/session.php';
 require_once __DIR__ . '/../includes/helpers.php';
 
 requireLogin();
-requireAdmin();
+requireEventManager();
 
 $db = new Database();
 $conn = $db->connect();
+$canViewAllEvents = isAdmin();
 
 $eventId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 $success = '';
 $error = '';
 
-$stmt = $conn->prepare("SELECT * FROM events WHERE id = ?");
-$stmt->execute([$eventId]);
+$eventQuery = "SELECT * FROM events WHERE id = ?";
+$eventParams = [$eventId];
+
+if (!$canViewAllEvents) {
+    $eventQuery .= " AND created_by = ?";
+    $eventParams[] = getUserId();
+}
+
+$stmt = $conn->prepare($eventQuery);
+$stmt->execute($eventParams);
 $event = $stmt->fetch();
 
 if (!$event) {
@@ -44,11 +53,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') {
         $ticketDiff = $totalTickets - $event['total_tickets'];
         $newAvailable = $event['available_tickets'] + $ticketDiff;
 
-        $stmt = $conn->prepare("UPDATE events SET title = ?, description = ?, event_date = ?, location = ?, total_tickets = ?, available_tickets = ?, price = ?, image = ?, status = ? WHERE id = ?");
-        if ($stmt->execute([$title, $description, $eventDate, $location, $totalTickets, $newAvailable, $price, $imagePath, $status, $eventId])) {
+        $updateQuery = "UPDATE events SET title = ?, description = ?, event_date = ?, location = ?, total_tickets = ?, available_tickets = ?, price = ?, image = ?, status = ? WHERE id = ?";
+        $updateParams = [$title, $description, $eventDate, $location, $totalTickets, $newAvailable, $price, $imagePath, $status, $eventId];
+
+        if (!$canViewAllEvents) {
+            $updateQuery .= " AND created_by = ?";
+            $updateParams[] = getUserId();
+        }
+
+        $stmt = $conn->prepare($updateQuery);
+        if ($stmt->execute($updateParams)) {
             $success = 'Event updated successfully!';
-            $stmt = $conn->prepare("SELECT * FROM events WHERE id = ?");
-            $stmt->execute([$eventId]);
+            $stmt = $conn->prepare($eventQuery);
+            $stmt->execute($eventParams);
             $event = $stmt->fetch();
         } else {
             $error = 'Failed to update event.';

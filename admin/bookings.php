@@ -83,13 +83,15 @@ require_once __DIR__ . '/../includes/header.php';
             <div class="card shadow">
                 <div class="card-body">
                     <div class="table-responsive">
-                        <table class="table table-hover">
+                        <table class="table table-hover align-middle">
                             <thead>
                                 <tr>
                                     <th>Booking Ref</th>
                                     <th>Customer Details</th>
                                     <th>Event</th>
+                                    <th>Ticket Type</th>
                                     <th>Tickets</th>
+                                    <th>Unit Price</th>
                                     <th>Amount</th>
                                     <th>Booking Date</th>
                                     <th>Status</th>
@@ -99,28 +101,34 @@ require_once __DIR__ . '/../includes/header.php';
                             <tbody>
                                 <?php if (empty($bookings)): ?>
                                     <tr>
-                                        <td colspan="8" class="text-center text-muted py-4">No bookings yet</td>
+                                        <td colspan="10" class="text-center text-muted py-4">No bookings yet</td>
                                     </tr>
                                 <?php else: ?>
                                     <?php foreach ($bookings as $booking): ?>
+                                        <?php
+                                            $ticketType = !empty($booking['ticket_type']) ? $booking['ticket_type'] : 'Regular';
+                                            $unitPrice = (float) ($booking['unit_price'] ?? 0);
+                                        ?>
                                         <tr>
                                             <td>
-                                                <strong class="text-primary"><?php echo $booking['booking_reference']; ?></strong>
+                                                <strong class="text-primary"><?php echo htmlspecialchars($booking['booking_reference']); ?></strong>
                                             </td>
                                             <td>
                                                 <div>
-                                                    <strong><?php echo $booking['full_name']; ?></strong><br>
+                                                    <strong><?php echo htmlspecialchars($booking['full_name']); ?></strong><br>
                                                     <small class="text-muted">
-                                                        <i class="bi bi-envelope"></i> <?php echo $booking['email']; ?>
-                                                        <?php if ($booking['phone']): ?>
-                                                            <br><i class="bi bi-phone"></i> <?php echo $booking['phone']; ?>
+                                                        <i class="bi bi-envelope"></i> <?php echo htmlspecialchars($booking['email']); ?>
+                                                        <?php if (!empty($booking['phone'])): ?>
+                                                            <br><i class="bi bi-phone"></i> <?php echo htmlspecialchars($booking['phone']); ?>
                                                         <?php endif; ?>
                                                     </small>
                                                 </div>
                                             </td>
-                                            <td><?php echo $booking['event_title']; ?></td>
-                                            <td><span class="badge bg-info"><?php echo $booking['ticket_quantity']; ?></span></td>
-                                            <td><strong>₱<?php echo number_format($booking['total_amount'], 2); ?></strong></td>
+                                            <td><?php echo htmlspecialchars($booking['event_title']); ?></td>
+                                            <td><span class="badge bg-secondary"><?php echo htmlspecialchars($ticketType); ?></span></td>
+                                            <td><span class="badge bg-info"><?php echo (int) $booking['ticket_quantity']; ?></span></td>
+                                            <td><strong>PHP <?php echo number_format($unitPrice, 2); ?></strong></td>
+                                            <td><strong>PHP <?php echo number_format((float) $booking['total_amount'], 2); ?></strong></td>
                                             <td><?php echo formatDate($booking['booking_date']); ?></td>
                                             <td>
                                                 <span class="badge bg-<?php
@@ -157,4 +165,3 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
-

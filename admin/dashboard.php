@@ -13,7 +13,7 @@ $statsQuery = "
     SELECT
         (SELECT COUNT(*) FROM events WHERE status = 'active') as total_events,
         (SELECT COUNT(*) FROM bookings) as total_bookings,
-        (SELECT COUNT(*) FROM users WHERE role = 'user') as total_users,
+        (SELECT COUNT(*) FROM users WHERE role IN ('customer', 'organizer', 'user')) as total_users,
         (SELECT COALESCE(SUM(total_amount), 0) FROM bookings WHERE status = 'confirmed') as total_revenue
 ";
 $stats = $conn->query($statsQuery)->fetch();

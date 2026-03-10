@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
     profile_pic VARCHAR(255),
     password VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
-    role ENUM('user', 'admin') DEFAULT 'user',
+    role ENUM('customer', 'organizer', 'admin') DEFAULT 'customer',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS bookings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
     event_id INT NOT NULL,
+    ticket_type VARCHAR(50) NOT NULL DEFAULT 'Regular',
+    unit_price DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
     ticket_quantity INT NOT NULL,
     total_amount DECIMAL(10, 2) NOT NULL,
     booking_reference VARCHAR(20) UNIQUE NOT NULL,
